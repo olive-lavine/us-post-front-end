@@ -1,30 +1,30 @@
 // utils/fetchAllAgencies.tsx
-import { storage, ref, getDownloadURL } from './firebaseConfig';
-import Papa from 'papaparse';
+import { storage, ref, getDownloadURL } from "./firebaseConfig";
+import Papa from "papaparse";
 
 type StateMap = {
   [key: string]: string;
 };
 
 const stateMap: StateMap = {
-  'Washington': 'washington-processed.csv',
-  'Wyoming': 'wyoming-processed.csv',
-  'Vermont': 'virginia-processed.csv',
-  'Texas': 'texas-processed.csv',
-  'Tennessee': 'tennessee-processed.csv',
-  'South Carolina': 'south-carolina-processed.csv',
-  'Oregon': 'oregon-processed.csv',
-  'Ohio': 'ohio-processed.csv',
-  'Maryland': 'maryland-processed.csv',
-  'Illinois': 'illinois-processed.csv',
-  'Georgia': 'georgia-processed.csv',
-  'Florida': 'florida-processed.csv',
-  'California': 'california-processed.csv',
-  'Arizona': 'arizona-processed.csv'
+  Washington: "washington-processed.csv",
+  Wyoming: "wyoming-processed.csv",
+  Vermont: "virginia-processed.csv",
+  Texas: "texas-processed.csv",
+  Tennessee: "tennessee-processed.csv",
+  "South Carolina": "south-carolina-processed.csv",
+  Oregon: "oregon-processed.csv",
+  Ohio: "ohio-processed.csv",
+  Maryland: "maryland-processed.csv",
+  Illinois: "illinois-processed.csv",
+  Georgia: "georgia-processed.csv",
+  Florida: "florida-processed.csv",
+  California: "california-processed.csv",
+  Arizona: "arizona-processed.csv",
 };
 
 const getStateFileName = (state: string): string => {
-  return stateMap[state] || 'arizona-processed.csv';
+  return stateMap[state] || "arizona-processed.csv";
 };
 
 const fetchCSVData = async (fileName: string) => {
