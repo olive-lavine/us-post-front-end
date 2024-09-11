@@ -1,5 +1,6 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
-import tableStyles from "./tableLight.module.scss";
+"use client";
+
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { CSVLink } from "react-csv";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -9,6 +10,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useTable, useSortBy, Column } from "react-table";
 import { debounce } from "lodash";
+import tableStyles from "./tableLight.module.scss";
 
 interface AgencyData {
   agency_name: string;
@@ -28,35 +30,69 @@ interface Filters {
 }
 
 interface AgencyTableProps {
-  agencyData: AgencyData[];
+  initialData: AgencyData[];
   totalCount: number;
-  isLoading: boolean;
-  currentPage: number;
+  page: number;
   pageSize: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
-  onFilterChange: (filters: Filters) => void;
-  filters: Filters;
+  state: string;
 }
 
 const AgencyTable: React.FC<AgencyTableProps> = ({
-  agencyData,
+  state,
+  initialData,
   totalCount,
-  isLoading,
-  currentPage,
+  page,
   pageSize,
-  onPageChange,
-  onPageSizeChange,
-  onFilterChange,
-  filters,
 }) => {
+  const [currentState, setCurrentState] = useState<string>(state);
+  const [data, setData] = useState<AgencyData[]>(initialData);
+  const [currentPage, setCurrentPage] = useState<number>(page);
+  const [currentPageSize, setCurrentPageSize] = useState<number>(pageSize);
+  const [filters, setFilters] = useState<Filters>({
+    lastName: "",
+    firstName: "",
+    agencyName: "",
+    uid: "",
+  });
   const [localFilters, setLocalFilters] = useState<Filters>(filters);
+  console.log("data", data);
+
+  // const fetchFilteredData = useCallback(async () => {
+  //   const queryParams = new URLSearchParams({
+  //     state: currentState,
+  //     page: currentPage.toString(),
+  //     pageSize: currentPageSize.toString(),
+  //     ...filters,
+  //   }).toString();
+
+  //   const response = await fetch(`/api/fetchStateData?${queryParams}`);
+  //   const { data: newData, totalCount: newTotalCount } = await response.json();
+  //   setData(newData);
+  // }, [currentState, currentPage, currentPageSize, filters]);
+
+  // useEffect(() => {
+  //   fetchFilteredData();
+  // }, [fetchFilteredData]);
+
+  const onPageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const onPageSizeChange = (size: number) => {
+    setCurrentPageSize(size);
+    setCurrentPage(1); // Reset to the first page
+  };
+
+  const onFilterChange = (newFilters: Filters) => {
+    setFilters(newFilters);
+    setCurrentPage(1); // Reset to the first page
+  };
 
   const debouncedFilterChange = useCallback(
     debounce((newFilters: Filters) => {
       onFilterChange(newFilters);
     }, 300),
-    [onFilterChange]
+    []
   );
 
   useEffect(() => {
@@ -89,200 +125,205 @@ const AgencyTable: React.FC<AgencyTableProps> = ({
     useTable(
       {
         columns,
-        data: agencyData,
+        data,
       },
       useSortBy
     );
 
-  const totalPages = Math.ceil(totalCount / pageSize);
+  const totalPages = Math.ceil(totalCount / currentPageSize);
 
   return (
-    <div className={tableStyles.tableContainer}>
-      {/* Filters */}
-      <div
-        className={tableStyles.tableHeader}
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <div style={{ display: "flex", gap: "10px" }}>
-          {[
-            { key: "uid", placeholder: "UID contains", filterKey: "uid" },
-            {
-              key: "lastName",
-              placeholder: "Last name contains",
-              filterKey: "lastName",
-            },
-            {
-              key: "firstName",
-              placeholder: "First name contains",
-              filterKey: "firstName",
-            },
-            {
-              key: "agencyName",
-              placeholder: "Agency contains",
-              filterKey: "agencyName",
-            },
-          ].map((filter) => (
-            <div
-              key={filter.key}
-              className={tableStyles.searchBarContainer}
-              style={{ position: "relative" }}
-            >
-              <FontAwesomeIcon
-                icon={faSearch}
-                style={{
-                  position: "absolute",
-                  left: "10px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  color: "black",
-                }}
-              />
-              <input
-                type="text"
-                value={localFilters[filter.filterKey as keyof Filters]}
-                onChange={(e) =>
-                  handleFilterChange(
-                    filter.filterKey as keyof Filters,
-                    e.target.value
-                  )
-                }
-                placeholder={filter.placeholder}
-                className={tableStyles.searchInput}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Table */}
-      <table className={tableStyles.agencyTable} {...getTableProps()}>
-        <thead>
-          {headerGroups.map((headerGroup) => (
-            <tr {...headerGroup.getHeaderGroupProps()} key={headerGroup.id}>
-              {headerGroup.headers.map((column) => (
-                <th
-                  {...column.getHeaderProps(
-                    (column as any).getSortByToggleProps()
-                  )}
-                  key={column.id}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "start",
-                      alignItems: "center",
-                    }}
-                  >
-                    <span>{column.render("Header")}</span>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        marginLeft: "8px",
-                      }}
-                    >
-                      <FontAwesomeIcon
-                        icon={faArrowUp}
-                        className={`${tableStyles.arrowIcon} ${
-                          (column as any).isSorted &&
-                          !(column as any).isSortedDesc
-                            ? tableStyles.activeSortIcon
-                            : ""
-                        }`}
-                      />
-                      <FontAwesomeIcon
-                        icon={faArrowDown}
-                        className={`${tableStyles.arrowIcon} ${
-                          tableStyles.arrowDown
-                        } ${
-                          (column as any).isSorted &&
-                          (column as any).isSortedDesc
-                            ? tableStyles.activeSortIcon
-                            : ""
-                        }`}
-                      />
-                    </div>
-                  </div>
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody {...getTableBodyProps()}>
-          {rows.map((row) => {
-            prepareRow(row);
-            return (
-              <tr {...row.getRowProps()} key={row.id}>
-                {row.cells.map((cell) => (
-                  <td {...cell.getCellProps()} key={cell.column.id}>
-                    {cell.render("Cell")}
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-
-      {/* Pagination */}
-      <div className={tableStyles.tableFooter}>
+    <div>
+      <div className={tableStyles.tableContainer}>
+        {/* Filters */}
         <div
+          className={tableStyles.tableHeader}
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginTop: "10px",
-            padding: "0 20px",
           }}
         >
-          <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-            <button
-              className={tableStyles.arrowButton}
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </button>
-            <button
-              className={tableStyles.arrowButton}
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
-            <span className={tableStyles.pageNumber}>
-              Page {currentPage} of {totalPages}
-            </span>
-            <div className={tableStyles.selectWrapper}>
-              <select
-                className={tableStyles.showPages}
-                value={pageSize}
-                onChange={(e) => {
-                  onPageSizeChange(Number(e.target.value));
-                }}
+          <div style={{ display: "flex", gap: "10px" }}>
+            {[
+              { key: "uid", placeholder: "UID contains", filterKey: "uid" },
+              {
+                key: "lastName",
+                placeholder: "Last name contains",
+                filterKey: "lastName",
+              },
+              {
+                key: "firstName",
+                placeholder: "First name contains",
+                filterKey: "firstName",
+              },
+              {
+                key: "agencyName",
+                placeholder: "Agency contains",
+                filterKey: "agencyName",
+              },
+            ].map((filter) => (
+              <div
+                key={filter.key}
+                className={tableStyles.searchBarContainer}
+                style={{ position: "relative" }}
               >
-                {[10, 20, 30, 40, 50].map((size) => (
-                  <option key={size} value={size}>
-                    Show {size}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <FontAwesomeIcon
+                  icon={faSearch}
+                  style={{
+                    position: "absolute",
+                    left: "10px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "black",
+                  }}
+                />
+                <input
+                  type="text"
+                  value={localFilters[filter.filterKey as keyof Filters]}
+                  onChange={(e) =>
+                    handleFilterChange(
+                      filter.filterKey as keyof Filters,
+                      e.target.value
+                    )
+                  }
+                  placeholder={filter.placeholder}
+                  className={tableStyles.searchInput}
+                />
+              </div>
+            ))}
           </div>
-          <CSVLink
-            data={agencyData}
-            filename={"agency_data.csv"}
-            className={tableStyles.csvLink}
-          >
-            Download CSV
-          </CSVLink>
         </div>
+
+        {/* Table */}
+        <table className={tableStyles.agencyTable} {...getTableProps()}>
+          <thead>
+            {headerGroups.map((headerGroup) => (
+              <tr
+                {...headerGroup.getHeaderGroupProps()}
+                key={headerGroup.headers[0].id}
+              >
+                {headerGroup.headers.map((column) => (
+                  <th
+                    {...column.getHeaderProps(
+                      (column as any).getSortByToggleProps()
+                    )}
+                    key={column.id}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "start",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span>{column.render("Header")}</span>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          marginLeft: "8px",
+                        }}
+                      >
+                        <FontAwesomeIcon
+                          icon={faArrowUp}
+                          className={`${tableStyles.arrowIcon} ${
+                            (column as any).isSorted &&
+                            !(column as any).isSortedDesc
+                              ? tableStyles.activeSortIcon
+                              : ""
+                          }`}
+                        />
+                        <FontAwesomeIcon
+                          icon={faArrowDown}
+                          className={`${tableStyles.arrowIcon} ${
+                            tableStyles.arrowDown
+                          } ${
+                            (column as any).isSorted &&
+                            (column as any).isSortedDesc
+                              ? tableStyles.activeSortIcon
+                              : ""
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody {...getTableBodyProps()}>
+            {rows.map((row) => {
+              prepareRow(row);
+              return (
+                <tr {...row.getRowProps()} key={row.id}>
+                  {row.cells.map((cell) => (
+                    <td {...cell.getCellProps()} key={cell.column.id}>
+                      {cell.render("Cell")}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* Pagination */}
+        <div className={tableStyles.tableFooter}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: "10px",
+              padding: "0 20px",
+            }}
+          >
+            <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+              <button
+                className={tableStyles.arrowButton}
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </button>
+              <button
+                className={tableStyles.arrowButton}
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
+              <span className={tableStyles.pageNumber}>
+                Page {currentPage} of {totalPages}
+              </span>
+              <div className={tableStyles.selectWrapper}>
+                <select
+                  className={tableStyles.showPages}
+                  value={pageSize}
+                  onChange={(e) => {
+                    onPageSizeChange(Number(e.target.value));
+                  }}
+                >
+                  {[10, 20, 30, 40, 50].map((size) => (
+                    <option key={size} value={size}>
+                      Show {size}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <CSVLink
+              data={data}
+              filename={"agency_data.csv"}
+              className={tableStyles.csvLink}
+            >
+              Download CSV
+            </CSVLink>
+          </div>
+        </div>
+        {/* {isLoading && <p>Loading data...</p>} */}
       </div>
-      {isLoading && <p>Loading data...</p>}
     </div>
   );
 };

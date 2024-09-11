@@ -48,7 +48,7 @@ export default async function Home() {
       <section className={styles.section}>
         <div className={styles.stateContainer}>
           {availableStates.map((state) => (
-            <Link key={state} href={`${state}/info`}>
+            <Link key={state} href={`/${state}/Info`}>
               <button className={styles.stateButton}>{state}</button>
             </Link>
           ))}

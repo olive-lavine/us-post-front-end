@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "POST Data",
-  description: "View Police Officer Employment History Data from the US",
+  description: "View US Police Officer Employment History Data",
 };
 
 export default function RootLayout({

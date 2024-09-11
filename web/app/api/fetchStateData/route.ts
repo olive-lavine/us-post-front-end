@@ -61,6 +61,7 @@ export async function GET(req: Request) {
       header: true,
       skipEmptyLines: true,
     });
+    console.log("where am i");
 
     const typedData = parsedData.data as AgencyData[];
 

@@ -7,7 +7,7 @@ const InfoPage = ({ params }: { params: { state: string } }) => {
       <h1>info page for {params.state}</h1>
       <div>
         <button>
-          <Link href={`/${params.state}/data`}>data</Link>
+          <Link href={`/${params.state}/Data`}>data</Link>
         </button>
       </div>
     </div>
